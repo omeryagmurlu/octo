@@ -1,3 +1,6 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+
 # WARNING: importing tensorflow too late can silence important logging (╯°□°)╯︵ ┻━┻
 import tensorflow as tf
 

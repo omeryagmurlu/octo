@@ -39,6 +39,25 @@ class ActionEncoding(IntEnum):
 
 
 OXE_DATASET_CONFIGS = {
+    "bridge": {
+        "image_obs_keys": {"primary": "image_0", "secondary": "image_1", "wrist": None},
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "proprio_encoding": ProprioEncoding.POS_EULER,
+        "action_encoding": ActionEncoding.EEF_POS,
+    },
+    "kit_irl_real_kitchen_delta_joint_euler": {
+        "image_obs_keys": {
+            "primary": "image",
+            "secondary": "wrist_image",
+            "wrist": "wrist_image",
+        },
+        "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
+        "proprio_encoding": ProprioEncoding.POS_EULER,
+        "action_encoding": ActionEncoding.EEF_POS,
+        "data_dir": "~/tensorflow_datasets",
+        "language_key": ["language_instruction", "language_instruction_2", "language_instruction_3"]
+        # "shuffle": False,
+    },
     "fractal20220817_data": {
         "image_obs_keys": {"primary": "image", "secondary": None, "wrist": None},
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},

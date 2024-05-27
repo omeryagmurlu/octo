@@ -293,7 +293,7 @@ def normalize_action_and_proprio(
     raise ValueError(f"Unknown normalization type {normalization_type}")
 
 
-def binarize_gripper_actions(actions: tf.Tensor) -> tf.Tensor:
+def binarize_gripper_actions(actions: tf.Tensor, open_boundary = 0.95, close_boundary = 0.05) -> tf.Tensor:
     """Converts gripper actions from continous to binary values (0 and 1).
 
     We exploit that fact that most of the time, the gripper is fully open (near 1.0) or fully closed (near
@@ -314,8 +314,8 @@ def binarize_gripper_actions(actions: tf.Tensor) -> tf.Tensor:
             carry = float(open_mask[i])
         new_actions[i] = carry
     """
-    open_mask = actions > 0.95
-    closed_mask = actions < 0.05
+    open_mask = actions > open_boundary # 0.95
+    closed_mask = actions < close_boundary # 0.05
     in_between_mask = tf.logical_not(tf.logical_or(open_mask, closed_mask))
 
     is_open_float = tf.cast(open_mask, tf.float32)
@@ -328,9 +328,9 @@ def binarize_gripper_actions(actions: tf.Tensor) -> tf.Tensor:
         )
 
     new_actions = tf.scan(
-        scan_fn, tf.range(tf.shape(actions)[0]), actions[-1], reverse=True
+        scan_fn, tf.range(tf.shape(actions)[0]), tf.cast(actions[-1], tf.float32), reverse=True
     )
-    return new_actions
+    return tf.cast(new_actions, tf.float64)
 
 
 def rel_open_or_closed(actions: tf.Tensor):

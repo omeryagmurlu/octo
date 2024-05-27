@@ -75,6 +75,7 @@ class SaveCallback(Callback):
                 orbax.checkpoint.PyTreeCheckpointer(),
                 options=orbax.checkpoint.CheckpointManagerOptions(
                     max_to_keep=1,
+                    keep_period=100_000
                 ),
             )
             # keep every params checkpoint

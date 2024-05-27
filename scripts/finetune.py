@@ -2,6 +2,8 @@ import datetime
 from functools import partial
 import os
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+
 from absl import app, flags, logging
 import flax
 from flax.traverse_util import flatten_dict

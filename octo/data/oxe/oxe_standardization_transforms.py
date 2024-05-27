@@ -967,8 +967,48 @@ def mujoco_manip_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]
     )
     return trajectory
 
+def kit_irl_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    trajectory["action"] = tf.concat(
+        [
+            trajectory["action"][:, :6],
+            binarize_gripper_actions(trajectory["action"][:, -1], 0.075, 0.065)[:, None],
+        ],
+        axis=-1,
+    )
+    
+    trajectory["observation"]["proprio"] = tf.concat(
+        (
+            trajectory["observation"]["end_effector_pos"],
+            trajectory["observation"]["end_effector_ori"],
+            tf.reshape(binarize_gripper_actions(trajectory["action_gripper_width"], 0.075, 0.065), [-1, 1]),
+        ),
+        axis=-1,
+    )
+    return trajectory
+
+def bridge_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    # marcel's?
+    trajectory["action"] = tf.concat(
+        [
+            trajectory["action"][:, :6],
+            binarize_gripper_actions(trajectory["action"][:, -1])[:, None],
+        ],
+        axis=1,
+    )
+    # TODO: confirm we need this for marcel's
+    trajectory = relabel_actions(trajectory)
+
+    trajectory["observation"]["proprio"] = trajectory["observation"]["state"]
+    return trajectory
+
 
 OXE_STANDARDIZATION_TRANSFORMS = {
+    "kit_irl_real_kitchen_delta_des_joint": kit_irl_dataset_transform,
+    "kit_irl_real_kitchen_des_joint": kit_irl_dataset_transform,
+    "kit_irl_real_kitchen_delta_joint": kit_irl_dataset_transform,
+    "kit_irl_real_kitchen_delta_joint_euler": kit_irl_dataset_transform,
+    "bridge": bridge_transform,
+
     "bridge_dataset": bridge_dataset_transform,
     "fractal20220817_data": rt1_dataset_transform,
     "kuka": kuka_dataset_transform,

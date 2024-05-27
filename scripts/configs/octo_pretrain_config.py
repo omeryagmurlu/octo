@@ -35,10 +35,10 @@ def get_config(config_string=None):
             task_stack_keys=["image_primary"],
             encoder=ModuleSpec.create(SmallStem16),
         ),
-        "wrist": ModuleSpec.create(
+        "secondary": ModuleSpec.create(
             ImageTokenizer,
-            obs_stack_keys=["image_wrist"],
-            task_stack_keys=["image_wrist"],
+            obs_stack_keys=["image_secondary"],
+            task_stack_keys=["image_secondary"],
             encoder=ModuleSpec.create(SmallStem16),
         ),
     }
@@ -61,7 +61,8 @@ def get_config(config_string=None):
         dropout_rate=0.0,
     )
 
-    # We augment differently for the primary and wrist cameras
+    # OCTO: We augment differently for the primary and wrist cameras
+    # OMER: but bridge_dataset is only for the primary and secondary cameras, so same augmentations
     primary_augment_kwargs = dict(
         random_resized_crop=dict(scale=[0.8, 1.0], ratio=[0.9, 1.1]),
         random_brightness=[0.1],
@@ -76,12 +77,14 @@ def get_config(config_string=None):
             "random_hue",
         ],
     )
-    wrist_augment_kwargs = dict(
+    secondary_augment_kwargs = dict(
+        random_resized_crop=dict(scale=[0.8, 1.0], ratio=[0.9, 1.1]),
         random_brightness=[0.1],
         random_contrast=[0.9, 1.1],
         random_saturation=[0.9, 1.1],
         random_hue=[0.05],
         augment_order=[
+            "random_resized_crop",
             "random_brightness",
             "random_contrast",
             "random_saturation",
@@ -97,11 +100,11 @@ def get_config(config_string=None):
 
     config["dataset_kwargs"]["frame_transform_kwargs"]["resize_size"] = {
         "primary": (256, 256),  # workspace camera is at 256x256
-        "wrist": (128, 128),  # wrist camera is at 128x128
+        "secondary": (128, 128),  # secondary camera is at 128x128
     }
     config["dataset_kwargs"]["frame_transform_kwargs"]["image_augment_kwargs"] = {
         "primary": primary_augment_kwargs,
-        "wrist": wrist_augment_kwargs,
+        "secondary": secondary_augment_kwargs,
     }
 
     config = update_config(
@@ -113,9 +116,9 @@ def get_config(config_string=None):
         ),
         dataset_kwargs=dict(
             oxe_kwargs=dict(
-                data_mix="oxe_magic_soup",
-                data_dir="gs://rail-orca-central2/resize_256_256",
-                load_camera_views=("primary", "wrist"),
+                data_mix="bridge_marcel",
+                data_dir="/home/marcelr/tensorflow_datasets",
+                load_camera_views=("primary", "secondary"),
                 load_depth=False,
                 force_recompute_dataset_statistics=False,
             ),
@@ -150,7 +153,7 @@ def get_config(config_string=None):
                 hf_model="t5-base",
             ),
         ),
-        eval_datasets=["bridge_dataset"],
+        eval_datasets=None, # don't eval
     )
 
     return config
