@@ -62,7 +62,6 @@ def get_config(config_string=None):
     )
 
     # OCTO: We augment differently for the primary and wrist cameras
-    # OMER: but bridge_dataset is only for the primary and secondary cameras, so same augmentations
     primary_augment_kwargs = dict(
         random_resized_crop=dict(scale=[0.8, 1.0], ratio=[0.9, 1.1]),
         random_brightness=[0.1],
@@ -78,13 +77,11 @@ def get_config(config_string=None):
         ],
     )
     secondary_augment_kwargs = dict(
-        random_resized_crop=dict(scale=[0.8, 1.0], ratio=[0.9, 1.1]),
         random_brightness=[0.1],
         random_contrast=[0.9, 1.1],
         random_saturation=[0.9, 1.1],
         random_hue=[0.05],
         augment_order=[
-            "random_resized_crop",
             "random_brightness",
             "random_contrast",
             "random_saturation",
@@ -125,12 +122,8 @@ def get_config(config_string=None):
             traj_transform_kwargs=dict(
                 action_horizon=4,
                 max_action_dim=action_dim,
-                task_augment_strategy="delete_and_rephrase",
-                task_augment_kwargs=dict(
-                    paraphrases_repo="rail-berkeley/OXE_paraphrases",
-                    paraphrases_filename="paraphrases_oxe.pkl",
-                    rephrase_prob=0.5,
-                ),
+                task_augment_strategy="delete_task_conditioning",
+                skip_unlabeled=True,
             ),
             batch_size=512,
             shuffle_buffer_size=500000,
@@ -153,7 +146,9 @@ def get_config(config_string=None):
                 hf_model="t5-base",
             ),
         ),
-        eval_datasets=None, # don't eval
+        eval_datasets=None,
+        eval_interval=1_000_000,
+        viz_interval=1_000_000,
     )
 
     return config

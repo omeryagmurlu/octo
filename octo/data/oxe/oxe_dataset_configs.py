@@ -44,6 +44,7 @@ OXE_DATASET_CONFIGS = {
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
         "proprio_encoding": ProprioEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,
+        "language_key": "language_instruction*"
     },
     "kit_irl_real_kitchen_delta_joint_euler": {
         "image_obs_keys": {
@@ -54,8 +55,8 @@ OXE_DATASET_CONFIGS = {
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
         "proprio_encoding": ProprioEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,
-        "data_dir": "~/tensorflow_datasets",
-        "language_key": ["language_instruction", "language_instruction_2", "language_instruction_3"]
+        # "data_dir": "~/tensorflow_datasets",
+        "language_key": "language_instruction*",
         # "shuffle": False,
     },
     "fractal20220817_data": {
