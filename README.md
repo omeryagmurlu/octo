@@ -1,3 +1,8 @@
+# Differences between BridgeV2 and bridge w/ lupus
+BridgeV2 and the bridge dataset w/ lupus labels (which follows bridge_data_msr) are not one to one compatible. You can find the inference script that works with the bridge dataset w/ lupus labels in `examples/01_inference_pretrained.ipynb`, where I also highlighted the differences between both datasets.
+
+Most changes boil down to different record structure, eg. using a `{'world_vector', 'rotation_delta', 'open_gripper'}` action dict instead of a 7-dim action tensor, name of some keys etc.
+
 # Octo
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/octo-models/octo/blob/main/examples/01_inference_pretrained.ipynb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
