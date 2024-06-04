@@ -60,6 +60,14 @@ def sample_match_keys_uniform(d: dict, key_template: str):
     else:
         return d[match_keys[0]]
 
+def filter_by_language_key(traj, *, language_key_template):
+    match_keys = [key for key in traj.keys() if fnmatch(key, language_key_template)]
+    if len(match_keys) == 0:
+        raise ValueError(f"No matching key found for {language_key_template}. Keys: {traj.keys()}")
+    
+    labels = tf.stack([traj[key] for key in match_keys], axis=0)
+    # if _any_ label in _any_ step is not empty, return True
+    return tf.math.reduce_any(labels != "")
 
 def pprint_data_mixture(
     dataset_kwargs_list: List[Dict[str, Any]], dataset_weights: List[int]

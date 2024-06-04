@@ -14,6 +14,9 @@ Target configuration:
 """
 from enum import IntEnum
 
+from octo.data.utils.data_utils import filter_by_language_key
+from octo.utils.spec import ModuleSpec
+
 
 class ProprioEncoding(IntEnum):
     """Defines supported proprio encoding schemes for different datasets."""
@@ -44,7 +47,19 @@ OXE_DATASET_CONFIGS = {
         "depth_obs_keys": {"primary": None, "secondary": None, "wrist": None},
         "proprio_encoding": ProprioEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,
-        "language_key": "language_instruction*"
+        # for groundtruth
+        "language_key": "groundtruth*",
+        # for lupus
+        # "language_key": "language_instruction*",
+
+        # take the intersection of both labels as our dataset
+        "filter_functions": (ModuleSpec.create(
+            filter_by_language_key,
+            language_key_template="groundtruth*"
+        ), ModuleSpec.create(
+            filter_by_language_key,
+            language_key_template="language_instruction*"
+        ))
     },
     "kit_irl_real_kitchen_delta_joint_euler": {
         "image_obs_keys": {
