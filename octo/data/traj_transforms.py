@@ -8,6 +8,15 @@ from typing import Optional
 import tensorflow as tf
 
 
+def convert_BGR_to_RGB(traj: dict, key="image_primary") -> dict:
+    """Converts BGR images to RGB."""
+    if key in traj["observation"]:
+        traj["observation"][key] = tf.reverse(traj["observation"][key], [-1])
+    else:
+        raise ValueError(f"Key {key} not in trajectory.")
+    return traj
+
+
 def chunk_act_obs(
     traj: dict,
     window_size: int = 1,

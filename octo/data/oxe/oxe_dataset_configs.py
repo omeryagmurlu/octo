@@ -48,9 +48,9 @@ OXE_DATASET_CONFIGS = {
         "proprio_encoding": ProprioEncoding.POS_EULER,
         "action_encoding": ActionEncoding.EEF_POS,
         # for groundtruth
-        "language_key": "groundtruth*",
+        # "language_key": "groundtruth*",
         # for lupus
-        # "language_key": "language_instruction*",
+        "language_key": "language_instruction*",
 
         # take the intersection of both labels as our dataset
         "filter_functions": (ModuleSpec.create(

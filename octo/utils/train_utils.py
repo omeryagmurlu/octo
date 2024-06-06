@@ -262,9 +262,9 @@ def freeze_weights(
     )
     tx = optax.multi_transform(partition_optimizers, param_partitions)
 
-    logging.debug("Frozen params:")
+    logging.info("Frozen params:")
     flax.traverse_util.path_aware_map(
-        lambda path, opt_status: logging.debug(".".join(path))
+        lambda path, opt_status: logging.info(".".join(path))
         if opt_status == "frozen"
         else None,
         param_partitions,

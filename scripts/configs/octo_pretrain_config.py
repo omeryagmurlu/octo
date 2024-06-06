@@ -8,6 +8,7 @@ get_base_config = imp.load_source(
     "config", os.path.join(os.path.dirname(__file__), "config.py")
 ).get_config
 
+from octo.data.traj_transforms import convert_BGR_to_RGB
 from octo.data.utils.text_processing import HFTokenizer
 from octo.model.components.action_heads import DiffusionActionHead
 from octo.model.components.tokenizers import ImageTokenizer, LanguageTokenizer
@@ -35,18 +36,12 @@ def get_config(config_string=None):
             task_stack_keys=["image_primary"],
             encoder=ModuleSpec.create(SmallStem16),
         ),
-        "secondary": ModuleSpec.create(
-            ImageTokenizer,
-            obs_stack_keys=["image_secondary"],
-            task_stack_keys=["image_secondary"],
-            encoder=ModuleSpec.create(SmallStem16),
-        ),
     }
     config["model"]["task_tokenizers"] = {
         "language": ModuleSpec.create(
             LanguageTokenizer,
             encoder="t5-base",
-            finetune_encoder=False,
+            finetune_encoder=True,
         ),
     }
     config["model"]["repeat_task_tokens"] = True
@@ -76,18 +71,6 @@ def get_config(config_string=None):
             "random_hue",
         ],
     )
-    secondary_augment_kwargs = dict(
-        random_brightness=[0.1],
-        random_contrast=[0.9, 1.1],
-        random_saturation=[0.9, 1.1],
-        random_hue=[0.05],
-        augment_order=[
-            "random_brightness",
-            "random_contrast",
-            "random_saturation",
-            "random_hue",
-        ],
-    )
 
     # ML-collections complains if the type of an existing field changes
     # so we delete and re-add the field
@@ -97,11 +80,9 @@ def get_config(config_string=None):
 
     config["dataset_kwargs"]["frame_transform_kwargs"]["resize_size"] = {
         "primary": (256, 256),  # workspace camera is at 256x256
-        "secondary": (128, 128),  # secondary camera is at 128x128
     }
     config["dataset_kwargs"]["frame_transform_kwargs"]["image_augment_kwargs"] = {
         "primary": primary_augment_kwargs,
-        "secondary": secondary_augment_kwargs,
     }
 
     config = update_config(
@@ -109,13 +90,27 @@ def get_config(config_string=None):
         num_steps=300000,
         window_size=2,
         optimizer=dict(
-            frozen_keys=("*hf_model*",),
+            frozen_keys=(
+                "*.hf_model.shared.embedding",
+                "*.hf_model.encoder.block.0.*",
+                "*.hf_model.encoder.block.1.*",
+                "*.hf_model.encoder.block.2.*",
+                "*.hf_model.encoder.block.3.*",
+                "*.hf_model.encoder.block.4.*",
+                "*.hf_model.encoder.block.5.*",
+                "*.hf_model.encoder.block.6.*",
+                "*.hf_model.encoder.block.7.*",
+                "*.hf_model.encoder.block.8.*",
+                "*.hf_model.encoder.block.9.*",
+                # "*.hf_model.encoder.block.10.*",
+                # "*.hf_model.encoder.block.11.*",
+            ),
         ),
         dataset_kwargs=dict(
             oxe_kwargs=dict(
                 data_mix="bridge_marcel",
                 data_dir="/home/marcelr/tensorflow_datasets",
-                load_camera_views=("primary", "secondary"),
+                load_camera_views=("primary",),
                 load_depth=False,
                 force_recompute_dataset_statistics=False,
             ),
@@ -124,6 +119,10 @@ def get_config(config_string=None):
                 max_action_dim=action_dim,
                 task_augment_strategy="delete_task_conditioning",
                 skip_unlabeled=True,
+                post_chunk_transforms=(ModuleSpec.create(
+                    convert_BGR_to_RGB,
+                    key="image_primary"
+                ),),
             ),
             batch_size=512,
             shuffle_buffer_size=500000,
