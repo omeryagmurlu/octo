@@ -13,10 +13,14 @@ import optax
 import tensorflow as tf
 import tqdm
 import wandb
+import os
 
+from copy import deepcopy
+from ml_collections import ConfigDict
 from octo.data.dataset import make_single_dataset
 from octo.model.components.action_heads import L1ActionHead
-from octo.model.components.tokenizers import LowdimObsTokenizer
+from octo.model.components.tokenizers import LowdimObsTokenizer, ImageTokenizer
+from octo.model.components.vit_encoders import SmallStem16
 from octo.model.octo_model import OctoModel
 from octo.utils.jax_utils import initialize_compilation_cache
 from octo.utils.spec import ModuleSpec
@@ -26,14 +30,15 @@ from octo.utils.train_utils import (
     process_text,
     TrainState,
 )
+from jax.lib import xla_bridge
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string(
-    "pretrained_path", None, "Path to pre-trained Octo checkpoint directory."
+    "pretrained_path", "hf://rail-berkeley/octo-small-1.5", "Path to pre-trained Octo checkpoint directory."
 )
-flags.DEFINE_string("data_dir", None, "Path to finetuning dataset, in RLDS format.")
-flags.DEFINE_string("save_dir", None, "Directory for saving finetuning checkpoints.")
+flags.DEFINE_string("data_dir", "/home/marcelr/tensorflow_datasets", "Path to finetuning dataset, in RLDS format.")
+flags.DEFINE_string("save_dir", "/home/marcelr/octo/runs", "Directory for saving finetuning checkpoints.")
 flags.DEFINE_integer("batch_size", 128, "Batch size for finetuning.")
 
 flags.DEFINE_bool(
@@ -42,8 +47,17 @@ flags.DEFINE_bool(
     "Whether pre-trained transformer weights should be frozen.",
 )
 
+def update_config(config, **kwargs):
+    updates = ConfigDict(kwargs)
+    new_config = deepcopy(config)
+    new_config.update(updates)
+    return new_config
+
 
 def main(_):
+    print("device count!")
+    print(xla_bridge.get_backend().platform)
+    print(jax.device_count())
     assert (
         FLAGS.batch_size % jax.device_count() == 0
     ), "Batch size must be divisible by device count."
@@ -53,7 +67,7 @@ def main(_):
     tf.config.set_visible_devices([], "GPU")
 
     # setup wandb for logging
-    wandb.init(name="finetune_aloha", project="octo")
+    wandb.init(name="finetune_octo", project="uha_loader", mode="disabled")
 
     # load pre-trained model
     logging.info("Loading pre-trained model...")
@@ -66,18 +80,17 @@ def main(_):
     logging.info("Loading finetuning dataset...")
     dataset = make_single_dataset(
         dataset_kwargs=dict(
-            name="aloha_sim_cube_scripted_dataset",
+            name="kit_irl_real_kitchen_delta_des_joint_euler",
             data_dir=FLAGS.data_dir,
-            image_obs_keys={"primary": "top"},
-            proprio_obs_key="state",
+            image_obs_keys={"primary": "image", "secondary": "wrist_image"},
             language_key="language_instruction",
         ),
         traj_transform_kwargs=dict(
             window_size=1,
-            action_horizon=50,
+            action_horizon=4,
         ),
         frame_transform_kwargs=dict(
-            resize_size={"primary": (256, 256)},
+            resize_size={"primary": (256, 256), "secondary": (256, 256)},
         ),
         train=True,
     )
@@ -105,21 +118,28 @@ def main(_):
     config = pretrained_model.config
     del config["model"]["observation_tokenizers"]["wrist"]
     ###
-    config["model"]["observation_tokenizers"]["proprio"] = ModuleSpec.create(
-        LowdimObsTokenizer,
-        n_bins=256,
-        bin_type="normal",
-        low=-2.0,
-        high=2.0,
-        obs_keys=["proprio"],
+    del config["model"]["observation_tokenizers"]["primary"]["kwargs"]["task_stack_keys"] # = update_config(config["model"]["observation_tokenizers"]["primary"]["kwargs"], task_stack_keys=None)
+    config["model"]["observation_tokenizers"]["secondary"] = ModuleSpec.create(
+        ImageTokenizer,
+        obs_stack_keys=["image_secondary"],
+        # task_stack_keys=["image_secondary"],
+        encoder=ModuleSpec.create(SmallStem16),
     )
+    # config["model"]["observation_tokenizers"]["proprio"] = ModuleSpec.create(
+    #     LowdimObsTokenizer,
+    #     n_bins=256,
+    #     bin_type="normal",
+    #     low=-2.0,
+    #     high=2.0,
+    #     obs_keys=["proprio"],
+    # )
     # Fully override the old action head with a new one (for smaller changes, you can use update_config)
-    config["model"]["heads"]["action"] = ModuleSpec.create(
-        L1ActionHead,
-        action_horizon=50,
-        action_dim=14,
-        readout_key="readout_action",
-    )
+    # config["model"]["heads"]["action"] = ModuleSpec.create(
+    #     L1ActionHead,
+    #     action_horizon=10,
+    #     action_dim=7,
+    #     readout_key="readout_action",
+    # )
 
     # initialize weights for modified Octo model, then merge in all applicable pre-trained weights
     # new position encodings for proprio inputs & weights for new action head will remain "from scratch"
@@ -197,4 +217,5 @@ def main(_):
 
 
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
     app.run(main)

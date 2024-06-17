@@ -971,6 +971,7 @@ def kit_irl_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     trajectory["action"] = tf.concat(
         [
             trajectory["action"][:, :6],
+            # trajectory["action_abs"][:, :6],
             binarize_gripper_actions(trajectory["action"][:, -1], 0.075, 0.065)[:, None],
         ],
         axis=-1,
@@ -1007,6 +1008,7 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "kit_irl_real_kitchen_des_joint": kit_irl_dataset_transform,
     "kit_irl_real_kitchen_delta_joint": kit_irl_dataset_transform,
     "kit_irl_real_kitchen_delta_joint_euler": kit_irl_dataset_transform,
+    "kit_irl_real_kitchen_delta_des_joint_euler": kit_irl_dataset_transform,
     "bridge": bridge_transform,
 
     "bridge_dataset": bridge_dataset_transform,

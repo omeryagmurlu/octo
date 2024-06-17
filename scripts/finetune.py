@@ -2,7 +2,7 @@ import datetime
 from functools import partial
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7' # '7' # '6,7'
 
 from absl import app, flags, logging
 import flax
@@ -14,6 +14,10 @@ import optax
 import tensorflow as tf
 import tqdm
 import wandb
+
+from octo.model.components.tokenizers import LowdimObsTokenizer, ImageTokenizer
+from octo.model.components.vit_encoders import SmallStem16
+from octo.model.components.action_heads import DiffusionActionHead
 
 from octo.data.dataset import make_single_dataset
 from octo.model.octo_model import OctoModel
@@ -145,6 +149,24 @@ def main(_):
     config = ConfigDict(flax.traverse_util.unflatten_dict(flat_config))
     config.update(FLAGS.config.get("update_config", ConfigDict()))
     config = config.to_dict()
+
+    del config["model"]["observation_tokenizers"]["wrist"]
+    del config["model"]["observation_tokenizers"]["primary"]["kwargs"]["task_stack_keys"] # = update_config(config["model"]["observation_tokenizers"]["primary"]["kwargs"], task_stack_keys=None)
+    config["model"]["observation_tokenizers"]["secondary"] = ModuleSpec.create(
+        ImageTokenizer,
+        obs_stack_keys=["image_secondary"],
+        # task_stack_keys=["image_secondary"],
+        encoder=ModuleSpec.create(SmallStem16),
+    )
+    # config["model"]["heads"]["action"] = ModuleSpec.create(
+    #     DiffusionActionHead,
+    #     action_horizon=4,
+    #     action_dim=7,
+    #     dropout_rate=0.0,
+    #     n_diffusion_samples=1,
+    #     readout_key="readout_action",
+    #     use_map=False,
+    # )
     check_config_diff(config, pretrained_model.config)
 
     #########

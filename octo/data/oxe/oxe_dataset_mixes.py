@@ -170,6 +170,26 @@ OXE_FULL_MIX = [
     ("gnm_dataset", 1.0),
 ]
 
+KIT_IRL_REAL_KITCHEN = [
+    ("kit_irl_real_kitchen_delta_des_joint", 1.0),
+]
+
+KIT_IRL_REAL_KITCHEN_DES_JOINT = [
+    ("kit_irl_real_kitchen_des_joint", 1.0),
+]
+
+KIT_IRL_REAL_KITCHEN_DELTA_JOINT = [
+    ("kit_irl_real_kitchen_delta_joint", 1.0),
+]
+
+KIT_IRL_REAL_KITCHEN_DELTA_JOINT_EULER = [
+    ("kit_irl_real_kitchen_delta_joint_euler", 1.0),
+]
+
+KIT_IRL_REAL_KITCHEN_DELTA_DES_JOINT_EULER = [
+    ("kit_irl_real_kitchen_delta_des_joint_euler", 1.0),
+]
+
 OXE_NAMED_MIXES = {
     "bridge_marcel": BRIDGE_MARCEL_MIX,
     "bridge": BRIDGE_MIX,
@@ -177,4 +197,9 @@ OXE_NAMED_MIXES = {
     "rtx_franka": RT_X_MIX + OXE_FRANKA_MIX,
     "oxe_magic_soup": OXE_MAGIC_SOUP,
     "oxe_flex_act_soup": OXE_FLEX_ACT_SOUP,
+    "finetune_data": KIT_IRL_REAL_KITCHEN,
+    "finetune_data_des_joint": KIT_IRL_REAL_KITCHEN_DES_JOINT,
+    "finetune_data_delta_joint": KIT_IRL_REAL_KITCHEN_DELTA_JOINT,
+    "finetune_data_delta_joint_euler": KIT_IRL_REAL_KITCHEN_DELTA_JOINT_EULER,
+    "finetune_data_delta_des_joint_euler": KIT_IRL_REAL_KITCHEN_DELTA_DES_JOINT_EULER,
 }

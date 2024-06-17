@@ -4,7 +4,7 @@ from ml_collections.config_dict import FieldReference, placeholder
 from octo.utils.spec import ModuleSpec
 
 
-def get_config(config_string="full,multimodal"):
+def get_config(config_string="full,language_conditioned"):
     mode, task = config_string.split(",")
     assert task in ["image_conditioned", "language_conditioned", "multimodal"]
     assert mode in ["full", "head_only", "head_mlp_only"]
@@ -16,12 +16,12 @@ def get_config(config_string="full,multimodal"):
     # and second image key should be the wrist view (None if not used)
 
     FINETUNING_KWARGS = {
-        "name": "kit_irl_real_kitchen_delta_joint_euler",
-        "data_dir": "/home/yagmurlu/tensorflow_datasets",
+        "name": "kit_irl_real_kitchen_delta_des_joint_euler",
+        "data_dir": "/home/marcelr/tensorflow_datasets", # "/home/yagmurlu/tensorflow_datasets",
         "image_obs_keys": {
             "primary": "image",
-            "secondary": None,
-            "wrist": "wrist_image",
+            "secondary": "wrist_image",
+            # "wrist": None,
         },
         "proprio_obs_key": "proprio",
         "language_key": "language_instruction",
@@ -55,7 +55,7 @@ def get_config(config_string="full,multimodal"):
     window_size = FieldReference(default=1)
 
     config = dict(
-        pretrained_path=placeholder(str),
+        pretrained_path="hf://rail-berkeley/octo-small-1.5",
         pretrained_step=placeholder(int),
         batch_size=256,
         shuffle_buffer_size=10000,
@@ -63,10 +63,10 @@ def get_config(config_string="full,multimodal"):
         log_interval=100,
         eval_interval=5000,
         save_interval=5000,
-        save_dir=placeholder(str),
+        save_dir="/home/marcelr/octo/runs",
         seed=42,
         wandb=dict(
-            project="octo_finetune", group=placeholder(str), entity=placeholder(str)
+            project="octo_finetune", group=placeholder(str), entity="irl-masterthesis"
         ),
         dataset_kwargs=FINETUNING_KWARGS,
         modality=task,
@@ -135,26 +135,26 @@ def get_config(config_string="full,multimodal"):
             "random_hue",
         ],
     )
-    wrist_augment_kwargs = dict(
-        random_brightness=[0.1],
-        random_contrast=[0.9, 1.1],
-        random_saturation=[0.9, 1.1],
-        random_hue=[0.05],
-        augment_order=[
-            "random_brightness",
-            "random_contrast",
-            "random_saturation",
-            "random_hue",
-        ],
-    )
+    # wrist_augment_kwargs = dict(
+    #     random_brightness=[0.1],
+    #     random_contrast=[0.9, 1.1],
+    #     random_saturation=[0.9, 1.1],
+    #     random_hue=[0.05],
+    #     augment_order=[
+    #         "random_brightness",
+    #         "random_contrast",
+    #         "random_saturation",
+    #         "random_hue",
+    #     ],
+    # )
     frame_transform_kwargs = dict(
         resize_size={
             "primary": (256, 256),  # workspace (3rd person) camera is at 256x256
-            "wrist": (128, 128),  # wrist camera is at 128x128
+            "secondary": (256, 256), # (128, 128),  # wrist camera is at 128x128
         },
         image_augment_kwargs=dict(
             primary=workspace_augment_kwargs,
-            wrist=wrist_augment_kwargs,
+            secondary=workspace_augment_kwargs,
         ),
     )
     # If the default data loading speed is too slow, try these:
