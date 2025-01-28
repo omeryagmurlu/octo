@@ -1,6 +1,7 @@
 from ml_collections import ConfigDict
 from ml_collections.config_dict import FieldReference, placeholder
 
+from octo.data.oxe import make_oxe_dataset_kwargs_and_weights
 from octo.utils.spec import ModuleSpec
 
 
@@ -15,24 +16,30 @@ def get_config(config_string="full,multimodal"):
     # first image key should be the third-person view (None if not used)
     # and second image key should be the wrist view (None if not used)
 
-    FINETUNING_KWARGS = {
-        "name": "bridge_dataset",
-        "data_dir": "./tests/debug_dataset",
-        "image_obs_keys": {"primary": "image_0", "wrist": None},
-        "proprio_obs_key": "proprio",
-        "language_key": "language_instruction",
-        "action_proprio_normalization_type": "normal",
-        # We want to avoid normalizing the gripper
-        "action_normalization_mask": [True, True, True, True, True, True, False],
-        # standardize_fn is dynamically loaded from a file
-        # for example: "experiments/kevin/custom_standardization_transforms.py:aloha_dataset_transform"
-        "standardize_fn": ModuleSpec.create(
-            "octo.data.oxe.oxe_standardization_transforms:bridge_dataset_transform",
-        ),
-        # If the default data loading speed is too slow, try these:
-        # "num_parallel_reads": 8,  # for reading from disk / GCS
-        # "num_parallel_calls": 16,  # for initial dataset construction
-    }
+    # FINETUNING_KWARGS = {
+    #     "name": "bridge_dataset",
+    #     "data_dir": "./tests/debug_dataset",
+    #     "image_obs_keys": {"primary": "image_0", "wrist": None},
+    #     "proprio_obs_key": "proprio",
+    #     "language_key": "language_instruction",
+    #     "action_proprio_normalization_type": "normal",
+    #     # We want to avoid normalizing the gripper
+    #     "action_normalization_mask": [True, True, True, True, True, True, False],
+    #     # standardize_fn is dynamically loaded from a file
+    #     # for example: "experiments/kevin/custom_standardization_transforms.py:aloha_dataset_transform"
+    #     "standardize_fn": ModuleSpec.create(
+    #         "octo.data.oxe.oxe_standardization_transforms:bridge_dataset_transform",
+    #     ),
+    #     # If the default data loading speed is too slow, try these:
+    #     # "num_parallel_reads": 8,  # for reading from disk / GCS
+    #     # "num_parallel_calls": 16,  # for initial dataset construction
+    # }
+
+    FINETUNING_KWARGS = make_oxe_dataset_kwargs_and_weights(
+        "kit_irl_real_kitchen_lang",
+        "/home/reuss/tensorflow_datasets",
+        load_camera_views=("primary", "secondary"),
+    )[0][0]
 
     if mode == "full":
         frozen_keys = None
@@ -131,7 +138,7 @@ def get_config(config_string="full,multimodal"):
             "random_hue",
         ],
     )
-    wrist_augment_kwargs = dict(
+    secondary_augment_kwargs = dict(
         random_brightness=[0.1],
         random_contrast=[0.9, 1.1],
         random_saturation=[0.9, 1.1],
@@ -146,11 +153,11 @@ def get_config(config_string="full,multimodal"):
     frame_transform_kwargs = dict(
         resize_size={
             "primary": (256, 256),  # workspace (3rd person) camera is at 256x256
-            "wrist": (128, 128),  # wrist camera is at 128x128
+            "secondary": (128, 128),  # secondary camera is at 128x128
         },
         image_augment_kwargs=dict(
             primary=workspace_augment_kwargs,
-            wrist=wrist_augment_kwargs,
+            secondary=secondary_augment_kwargs,
         ),
     )
     # If the default data loading speed is too slow, try these:
@@ -160,4 +167,25 @@ def get_config(config_string="full,multimodal"):
 
     config["traj_transform_kwargs"] = traj_transform_kwargs
     config["frame_transform_kwargs"] = frame_transform_kwargs
+
+    config["config_delete_keys"] = {
+        "model": {
+            "observation_tokenizers": {
+                "wrist": {}
+            }
+        }
+    }
+
+    config["update_config"] = {
+        "model": {
+            "heads": {
+                "action": {
+                    "kwargs": {
+                        "action_dim": 8
+                    }
+                }
+            }
+        }
+    }
+
     return ConfigDict(config)

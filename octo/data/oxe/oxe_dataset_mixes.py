@@ -166,7 +166,12 @@ OXE_FULL_MIX = [
     ("gnm_dataset", 1.0),
 ]
 
+KIT_IRL_KITCHEN = [
+    ("kit_irl_real_kitchen_lang", 1.0),
+]
+
 OXE_NAMED_MIXES = {
+    "kit_irl_real_kitchen_lang": KIT_IRL_KITCHEN,
     "bridge": BRIDGE_MIX,
     "rtx": RT_X_MIX,
     "rtx_franka": RT_X_MIX + OXE_FRANKA_MIX,

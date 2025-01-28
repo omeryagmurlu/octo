@@ -1,0 +1,1 @@
+python scripts/finetune.py --config.pretrained_path=hf://rail-berkeley/octo-base-1.5 --config.save_dir=outputs
