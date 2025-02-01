@@ -142,7 +142,8 @@ class HttpServer:
             for key in obs:
                 if "image_primary" in key:
                     obs[key] = resize(obs[key])
-                    pass
+                if "image_secondary" in key:
+                    obs[key] = resize(obs[key], size=(128,128))
                 # normalize proprioception expect for bimanual proprioception 
                 if "proprio" in key and not key == "proprio_bimanual":
                     proprio_normalization_statistics = self.models[
